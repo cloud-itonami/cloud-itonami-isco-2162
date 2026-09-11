@@ -18,7 +18,7 @@ This project operates under a consensus-driven model with clear escalation paths
 
 All code must:
 
-1. Pass the full test suite (`clojure -M:test`).
+1. Pass the full test suite (`kbb -M:test`).
 2. Maintain the itonami actor pattern (governor-gated decisions, append-only audit trail).
 3. Be documented with clear docstrings.
 4. Follow the existing code style and conventions.
