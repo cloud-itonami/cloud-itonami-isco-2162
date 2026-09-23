@@ -4,12 +4,17 @@
             [architecture.advisor :as advisor]
             [architecture.actor :as actor]))
 
-(defn- fresh-graph []
+(defn- fresh-store []
   (let [st (store/mem-store)]
     (store/register-project! st {:project-id "proj-1" :client-id "client-1" :name "Community Garden"})
-    (actor/build-graph
-     {:store st
-      :advisor (advisor/mock-advisor)})))
+    st))
+
+(defn- fresh-graph
+  ([] (fresh-graph (fresh-store)))
+  ([st]
+   (actor/build-graph
+    {:store st
+     :advisor (advisor/mock-advisor)})))
 
 (deftest end-to-end-draft-design-concept
   (let [g (fresh-graph)
@@ -40,3 +45,31 @@
                 "thread-3")]
     (is (= :done (:status result)))
     (is (empty? (:frontier result)))))
+
+(deftest end-to-end-hold-on-op-outside-the-catalog
+  ;; The mock advisor passes the request's op through, as an LLM would pass
+  ;; through whatever it wrote. Before architecture.operations this run
+  ;; committed a :demolish-site design record.
+  (let [st (fresh-store)
+        g (fresh-graph st)
+        result (actor/run-request!
+                g
+                {:project-id "proj-1" :op :demolish-site :stake :low}
+                {}
+                "thread-4")]
+    (is (= :done (:status result)))
+    (is (empty? (store/records-of st "proj-1")))
+    (is (= :hold (:disposition (last (store/ledger st)))))
+    (is (= [:unknown-op]
+           (mapv :rule (:violations (:verdict (last (store/ledger st)))))))))
+
+(deftest end-to-end-commit-on-client-review
+  (let [st (fresh-store)
+        g (fresh-graph st)
+        result (actor/run-request!
+                g
+                {:project-id "proj-1" :op :request-client-review :stake :low}
+                {}
+                "thread-5")]
+    (is (= :done (:status result)))
+    (is (= [:request-client-review] (mapv :op (store/records-of st "proj-1"))))))

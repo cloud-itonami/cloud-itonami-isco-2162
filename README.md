@@ -71,10 +71,15 @@ human-in-the-loop interrupt/resume via checkpointing.
   way the advisor only ever produces a `:propose`-effect proposal,
   never a final stamp, and LLM parse failures always yield
   `confidence 0.0` (forces escalation, never fabricated confidence).
+- `src/architecture/operations.kotoba` — the closed vocabulary of ops:
+  four `permitted`, two `forbidden` (the architect's seal). An op in
+  neither set is refused.
 - `src/architecture/governor.kotoba` — `LandscapeGovernor/check`: a pure
   function, wired as its own `:govern` node. Hard invariants
   (unregistered project, a proposal whose `:effect` isn't `:propose`,
-  any attempt to issue a stamped design or certify environmental compliance)
+  any attempt to issue a stamped design or certify environmental compliance,
+  an `:op` outside `architecture.operations` — including the `:unknown` an
+  unreadable LLM reply becomes)
   always route to `:hold`. Escalation invariants (environmental compliance
   flags, drainage/grading/environmental-sensitive systems, or low advisor confidence) always route to
   `:request-approval` — an `interrupt-before` node that the graph
@@ -86,8 +91,19 @@ human-in-the-loop interrupt/resume via checkpointing.
   `approve!`: the `langgraph.graph/state-graph` wiring itself.
 
 ```bash
-kbb -M:test
+kbb --backend sci test/run_suite.cljk
 ```
+
+The suite is **19 tests / 45 assertions**. `test/run_suite.cljk` reads that
+sentence and refuses (exit 2) any run that comes in under it. `kbb -M:test`
+does not run this suite: the sources are `.kotoba`, which the test runner does
+not collect (it reports `0 test namespace(s) found`, exit 1).
+
+Before `architecture.operations` (2026-09-23) the governor accepted any op it
+had not heard of: `{:op :demolish-site :effect :propose :confidence 0.9}` for a
+registered project was `:ok? true` and committed a design record.
+`hard-on-op-outside-the-catalog` and `end-to-end-hold-on-op-outside-the-catalog`
+pin the refusal.
 
 This is what backs this repo's `:maturity :implemented` entry in
 [`kotoba-lang/occupation`](https://github.com/kotoba-lang/occupation).
