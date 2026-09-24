@@ -1,0 +1,32 @@
+;; What this vertical's robot physically does, declared for
+;; kotoba.robotics.process (kotoba-lang/robotics). `kbb -M:physics` runs it.
+;;
+;; README "Robotics premise": a design-support robot prepares design
+;; concepts, specifications and environmental compliance assessments for
+;; landscape architects (ISCO 2162). The physical works such designs specify:
+;; a rain garden that must drain its ponded water through the underdrain, and
+;; lifting a root-balled shrub into its planting pit.
+;;
+;; Every number without a cited source is marked `estimate` in its :basis.
+;; Replacing an estimate with a sourced value is this bot's growth work.
+{:physics/schema "itonami.physical-ai.spec.v1"
+ :repo "cloud-itonami/cloud-itonami-isco-2162"
+ :cases
+ [{:id :rain-garden-drawdown
+   :kind :tank-drain
+   :procedure "50 m2 rain garden drains its ponded storm water through a 0.0002 m2 (16 mm) underdrain orifice"
+   :params {:tank-area-m2 50.0 :h-target-m 0.01 :orifice-area-m2 0.0002 :cd 0.62
+            :q-in-m3s 0.0 :dt-s 5.0 :max-time-s 604800.0}
+   :sweep {:param :h0-m :values [0.10 0.15 0.20 0.30 0.45]}
+   :quantity :time-to-target-s
+   :limit {:max 86400.0 :basis "estimate: 24-hour drawdown so ponded water does not drown plantings or breed mosquitoes"}
+   :boundary {:lo 0.05 :hi 0.6}}
+  {:id :shrub-rootball-planting
+   :kind :manipulator
+   :procedure "planting robot's arm lifts a root-balled shrub from the trailer bed down into the planting pit"
+   :params {:l1-m 0.70 :l2-m 0.60 :m1-kg 10.0 :m2-kg 8.0
+            :from [0.60 0.40] :to [0.80 -0.50] :duration-s 4.0 :steps 500}
+   :sweep {:param :payload-kg :values [10.0 20.0 30.0 45.0 60.0]}
+   :quantity :peak-tau1-nm
+   :limit {:max 350.0 :basis "estimate: continuous shoulder torque of a ~25 kg payload class industrial arm on a compact tracked carrier"}
+   :boundary {:lo 1.0 :hi 120.0}}]}
